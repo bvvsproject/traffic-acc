@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero glass-card">
+    <div class="hero-content">
+        <h1>AI-Based Traffic <br> <span class="highlight">Severity Prediction</span></h1>
+        <p>A smart system that analyzes accident conditions and predicts severity to help improve road safety.</p>
+        <div class="hero-buttons">
+            <a href="/predict" class="btn btn-primary">Get Started</a>
+            <a href="/dashboard" class="btn btn-secondary">View Dashboard</a>
+            {% if not session.get('username') %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero-graphics"
+        style="height: auto; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+        <img src="{{ url_for('static', filename='images/traffic_hero.png') }}" alt="AI Traffic Prediction Hero"
+            style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); position: relative; z-index: 2;">
+        <div class="floating-shape shape1"></div>
+        <div class="floating-shape shape2"></div>
+        <div class="floating-shape shape3"></div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="feature-card glass-card">
+        <h3>🤖 Smart AI Prediction</h3>
+        <p>Our system uses intelligent algorithms to quickly analyze accident conditions and predict severity levels
+            with high accuracy.</p>
+    </div>
+    <div class="feature-card glass-card">
+        <h3>⚡ Instant Results</h3>
+        <p>Enter simple details like weather and road condition to get immediate severity prediction within seconds.</p>
+    </div>
+    <div class="feature-card glass-card">
+        <h3>👍 Easy & User Friendly</h3>
+        <p>A clean and simple interface that works smoothly on mobile, tablet, and desktop devices.</p>
+    </div>
+</section>
+
+
+{% endblock %}

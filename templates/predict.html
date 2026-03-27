@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="predict-container glass-card">
+    <div class="predict-header">
+        <h2>Predict Accident Severity</h2>
+        <p>Fill in the road and weather conditions to get an AI-powered severity prediction.</p>
+    </div>
+
+    {% if not model_loaded %}
+    <div style="text-align:center; padding:1.5rem; color: var(--danger); background: rgba(239,68,68,0.08); border-radius:12px; margin-bottom:1rem;">
+        ⚠️ Model not trained yet. Please run <code>py train.py</code> first.
+    </div>
+    {% endif %}
+
+    <div class="predict-layout">
+        <!-- ── Input Form ── -->
+        <form id="predict-form" class="predict-form">
+            <div class="form-grid">
+
+                <!-- Road Type -->
+                <div class="input-group">
+                    <label for="road_type">Road Type</label>
+                    <select id="road_type" name="Road_Type" class="glass-input">
+                        <option value="City Road">City Road</option>
+                        <option value="Expressway">Expressway</option>
+                        <option value="Highway">Highway</option>
+                        <option value="Rural Road">Rural Road</option>
+                        <option value="Rural">Rural</option>
+                    </select>
+                </div>
+
+                <!-- Road Condition -->
+                <div class="input-group">
+                    <label for="road_condition">Road Condition</label>
+                    <select id="road_condition" name="Road_Condition" class="glass-input">
+                        <option value="Dry">Dry</option>
+                        <option value="Wet">Wet</option>
+                        <option value="Ice">Ice</option>
+                        <option value="Snow">Snow</option>
+                        <option value="Damaged">Damaged</option>
+                    </select>
+                </div>
+
+                <!-- Vehicle Speed -->
+                <div class="input-group">
+                    <label for="vehicle_speed">Vehicle Speed (mph)</label>
+                    <input type="number" step="0.1" id="vehicle_speed" name="Vehicle_Speed"
+                           min="0" max="250" placeholder="e.g. 65" class="glass-input" required>
+                </div>
+
+                <!-- Speed Limit -->
+                <div class="input-group">
+                    <label for="speed_limit">Speed Limit (mph)</label>
+                    <input type="number" step="1" id="speed_limit" name="Speed_Limit"
+                           min="0" max="250" placeholder="e.g. 60" class="glass-input" required>
+                </div>
+
+                <!-- Vehicle Type -->
+                <div class="input-group">
+                    <label for="vehicle_type">Vehicle Type</label>
+                    <select id="vehicle_type" name="Vehicle_Type" class="glass-input">
+                        <option value="Car">Car</option>
+                        <option value="Bike">Bike</option>
+                        <option value="Bus">Bus</option>
+                        <option value="Truck">Truck</option>
+                    </select>
+                </div>
+
+                <!-- Temperature -->
+                <div class="input-group">
+                    <label for="temperature">Temperature (°C/°F)</label>
+                    <select id="temperature" name="Temperature" class="glass-input" required>
+                        <option value="5" selected>Low (&lt; 15°C)</option>
+                        <option value="20">Medium (15°C - 28°C)</option>
+                        <option value="35">High (&gt; 28°C)</option>
+                    </select>
+                </div>
+
+                <!-- Humidity Level -->
+                <div class="input-group">
+                    <label for="humidity">Humidity Level (%)</label>
+                    <select id="humidity" name="Humidity" class="glass-input" required>
+                        <option value="30">Low (&lt; 40%)</option>
+                        <option value="60" selected>Medium (40% - 75%)</option>
+                        <option value="90">High (&gt; 75%)</option>
+                    </select>
+                </div>
+
+                <!-- Visibility -->
+                <div class="input-group">
+                    <label for="visibility">Visibility Level</label>
+                    <select id="visibility" name="Visibility" class="glass-input" required>
+                        <option value="100">Low (&lt; 200m)</option>
+                        <option value="500" selected>Medium (200m - 1000m)</option>
+                        <option value="2000">High (&gt; 1000m)</option>
+                    </select>
+                </div>
+
+                <!-- Weather Condition -->
+                <div class="input-group">
+                    <label for="weather">Weather Condition</label>
+                    <select id="weather" name="Weather_Condition" class="glass-input">
+                        <option value="Clear">Clear</option>
+                        <option value="Rainy">Rainy</option>
+                        <option value="Foggy">Foggy</option>
+                        <option value="Snow">Snow</option>
+                        <option value="Storm">Storm</option>
+                    </select>
+                </div>
+
+                <!-- Junction -->
+                <div class="input-group">
+                    <label for="junction">Junction Type</label>
+                    <select id="junction" name="Junction" class="glass-input">
+                        <option value="No">No</option>
+                        <option value="Crossroad">Crossroad</option>
+                        <option value="T-Junction">T-Junction</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Road Infrastructure (binary checkboxes) -->
+            <div class="input-group" style="margin-top: 1.5rem;">
+                <label style="margin-bottom: 0.75rem; display: block; font-weight: 600;">
+                    Road Infrastructure / Features
+                </label>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="chk_crossing" data-field="Crossing"> Crossing
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="chk_railway" data-field="Railway_Crossing"> Railway Crossing
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="chk_stop" data-field="Stop_Sign"> Stop Sign
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="chk_bump" data-field="Speed_Breaker"> Speed Breaker
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="submit-btn"
+                    {% if not model_loaded %}disabled{% endif %}>
+                <span class="btn-text">Predict Severity</span>
+                <span class="loader hidden"></span>
+            </button>
+        </form>
+
+        <!-- ── Result Box ── -->
+        <div class="result-box glass-card hidden" id="result-box">
+            <h3>Prediction Result</h3>
+            <div class="severity-badge" id="severity-badge">
+                <span id="severity-level" style="font-size:1rem; opacity:0.75;">Level</span>
+                <h2 id="severity-label">—</h2>
+            </div>
+            <p id="severity-desc" style="margin-top:1rem; line-height:1.6; color: var(--text-muted);">
+                Awaiting input...
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    transition: background 0.2s;
+}
+.checkbox-label:hover { background: rgba(99,102,241,0.12); }
+.checkbox-label input[type="checkbox"] { accent-color: var(--primary-color); width:16px; height:16px; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form       = document.getElementById('predict-form');
+    const resultBox  = document.getElementById('result-box');
+    const badge      = document.getElementById('severity-badge');
+    const levelEl    = document.getElementById('severity-level');
+    const labelEl    = document.getElementById('severity-label');
+    const descEl     = document.getElementById('severity-desc');
+    const submitBtn  = document.getElementById('submit-btn');
+    const btnText    = submitBtn.querySelector('.btn-text');
+    const loader     = submitBtn.querySelector('.loader');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Show loader
+        btnText.textContent = 'Predicting...';
+        loader.classList.remove('hidden');
+        submitBtn.disabled = true;
+
+        // ── Collect named inputs (text / number / select) ──
+        const payload = {};
+        form.querySelectorAll('input[name], select[name]').forEach(el => {
+            const key = el.name;
+            const val = el.value;
+            // Try to parse as number, else keep string
+            payload[key] = (isNaN(val) || val === '') ? val : parseFloat(val);
+        });
+
+        // ── Collect checkboxes → binary 0/1 ──
+        const binaryFields = [
+            'Crossing', 'Railway_Crossing', 'Stop_Sign', 'Speed_Breaker'
+        ];
+        
+        // initialize to 0
+        binaryFields.forEach(f => { payload[f] = 0; });
+
+        // set to 1 if checked
+        form.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+            if (chk.checked) {
+                payload[chk.dataset.field] = 1;
+            }
+        });
+
+        try {
+            const res  = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                levelEl.textContent = `Level ${data.severity_level}`;
+                labelEl.textContent = data.label;
+                descEl.textContent  = data.explanation;
+                badge.style.borderColor = data.color;
+                labelEl.style.color     = data.color;
+                resultBox.classList.remove('hidden');
+                resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        } catch (err) {
+            alert('Request failed: ' + err.message);
+        } finally {
+            btnText.textContent = 'Predict Severity';
+            loader.classList.add('hidden');
+            submitBtn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

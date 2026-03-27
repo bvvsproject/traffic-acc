@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Traffic Severity Prediction</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .mobile-auth-btn { display: none; }
+        @media (max-width: 768px) {
+            .mobile-auth-btn { display: block; }
+            .desktop-auth-item { display: none !important; }
+        }
+    </style>
+    <!-- Prevent FOUC for dark mode -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark-mode'); // We'll add this class to body later, but setting on html or body early is good.
+        }
+    </script>
+</head>
+<body class="">
+    <!-- Apply class safely onload -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+    <nav class="glass-nav">
+        <div class="nav-container">
+            <a href="/" class="brand">TrafficAI</a>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="mobile-auth-btn">
+                    {% if session.get('username') %}
+                    <a href="/logout" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(99,102,241,0.35);">Logout</a>
+                    {% else %}
+                    <a href="/login" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(99,102,241,0.35);">Sign In</a>
+                    {% endif %}
+                </div>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/predict">Predict</a></li>
+                <li><a href="/about">About Us</a></li>
+                <li style="display:flex; align-items:center;">
+                    <button id="theme-toggle" title="Toggle Dark Mode" style="background:transparent; border:none; font-size:1.4rem; cursor:pointer; padding:0 0.5rem; color:var(--text-main); transition:transform 0.3s ease;">
+                        🌓
+                    </button>
+                </li>
+                {% if session.get('username') %}
+                <li class="desktop-auth-item" style="display:flex; align-items:center; gap:0.75rem;">
+                    <span style="font-size:0.85rem; color: var(--text-muted); font-weight:500;">
+                        👤 {{ session['username'] }}
+                    </span>
+                    <a href="/logout" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(99,102,241,0.35);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        Logout
+                    </a>
+                </li>
+                {% else %}
+                <li class="desktop-auth-item" style="display:flex; align-items:center; gap:0.75rem;">
+                    <a href="/login" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(99,102,241,0.35);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        Sign In
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="glass-footer">
+        <p>&copy; 2026 AI-Based Traffic Severity Prediction. All rights reserved.</p>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

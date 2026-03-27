@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — AI Traffic Severity Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 15% 25%, rgba(99,102,241,0.18) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(236,72,153,0.18) 0%, transparent 45%);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 60px rgba(31,38,135,0.1);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0);    }
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo .brand-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .login-logo p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+
+        .login-card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+        }
+
+        .login-card .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-group .input-icon-wrap {
+            position: relative;
+        }
+
+        .form-group .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border-radius: 12px;
+            border: 1.5px solid var(--glass-border);
+            background: var(--glass-bg);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            background: var(--glass-bg);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+        }
+
+        body.dark-mode .form-group input:focus {
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+        }
+
+        .form-group input::placeholder { color: #94a3b8; }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.85rem;
+            margin-top: 0.5rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.6);
+        }
+
+        .btn-login:active { transform: translateY(0); }
+
+        .flash-error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #dc2626;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .hint-box {
+            background: rgba(99,102,241,0.06);
+            border: 1px solid rgba(99,102,241,0.15);
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 1.2rem;
+            text-align: center;
+        }
+
+        .hint-box strong { color: var(--primary-color); }
+    </style>
+</head>
+<body class="">
+    <!-- Apply dark mode safely -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+    <div class="login-wrapper">
+        <div class="login-card">
+
+            <!-- Logo -->
+            <div class="login-logo">
+                <div class="brand-name">🚦 TrafficAI</div>
+                <p>AI-Based Traffic Severity Prediction</p>
+            </div>
+
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Sign in to access the prediction dashboard.</p>
+
+            <!-- Flash error -->
+            {% if error %}
+            <div class="flash-error">⚠️ {{ error }}</div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="username" name="username"
+                               placeholder="Enter your username" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password"
+                               placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">Sign In →</button>
+            </form>
+
+            <!-- Register link -->
+            <div style="text-align:center; margin-top: 1.2rem; font-size: 0.875rem; color: var(--text-muted);">
+                Don't have an account?
+                <a href="/register" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">
+                    Create one →
+                </a>
+            </div>
+
+            
+
+            <div class="login-footer">
+                &copy; 2026 AI Traffic Severity Prediction · BVVS Project
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — AI Traffic Severity Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(236,72,153,0.18) 0%, transparent 45%),
+                radial-gradient(circle at 80% 70%, rgba(99,102,241,0.18) 0%, transparent 45%);
+        }
+
+        .register-wrapper {
+            width: 100%;
+            max-width: 460px;
+            padding: 1rem;
+        }
+
+        .register-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 60px rgba(31,38,135,0.1);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0);    }
+        }
+
+        .register-logo {
+            text-align: center;
+            margin-bottom: 1.8rem;
+        }
+
+        .register-logo .brand-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .register-logo p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+
+        .register-card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+        }
+
+        .register-card .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.4rem;
+        }
+
+        .input-icon-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border-radius: 12px;
+            border: 1.5px solid var(--glass-border);
+            background: var(--glass-bg);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            background: var(--glass-bg);
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(236,72,153,0.2);
+        }
+
+        body.dark-mode .form-group input:focus {
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+        }
+
+        .form-group input::placeholder { color: #94a3b8; }
+
+        /* Password strength bar */
+        .strength-bar-wrap {
+            margin-top: 0.5rem;
+            display: none;
+        }
+        .strength-bar-bg {
+            height: 4px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .strength-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.35s ease, background 0.35s ease;
+        }
+        .strength-label {
+            font-size: 0.75rem;
+            margin-top: 0.3rem;
+            color: var(--text-muted);
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 0.85rem;
+            margin-top: 0.5rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(236,72,153,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(236,72,153,0.55);
+        }
+
+        .btn-register:active { transform: translateY(0); }
+
+        .flash-error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #dc2626;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .flash-success {
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #059669;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.4rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .login-link a {
+            color: var(--primary-color);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .login-link a:hover { text-decoration: underline; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="">
+    <!-- Apply dark mode safely -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+    <div class="register-wrapper">
+        <div class="register-card">
+
+            <!-- Logo -->
+            <div class="register-logo">
+                <div class="brand-name">🚦 TrafficAI</div>
+                <p>AI-Based Traffic Severity Prediction</p>
+            </div>
+
+            <h2>Create Account</h2>
+            <p class="subtitle">Sign up to start predicting traffic severity.</p>
+
+            {% if error %}
+            <div class="flash-error">⚠️ {{ error }}</div>
+            {% endif %}
+
+            {% if success %}
+            <div class="flash-success">✅ {{ success }}</div>
+            {% endif %}
+
+            <form method="POST" action="/register">
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="fullname">Full Name</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">🙍</span>
+                        <input type="text" id="fullname" name="fullname"
+                               placeholder="Your full name" required autocomplete="name">
+                    </div>
+                </div>
+
+                <!-- Username -->
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="username" name="username"
+                               placeholder="Choose a username" required autocomplete="username"
+                               pattern="[a-zA-Z0-9_]{3,20}" title="3–20 characters, letters/numbers/underscore only">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password"
+                               placeholder="Create a password (min 6 chars)" required
+                               autocomplete="new-password" minlength="6">
+                    </div>
+                    <div class="strength-bar-wrap" id="strength-wrap">
+                        <div class="strength-bar-bg">
+                            <div class="strength-bar-fill" id="strength-fill"></div>
+                        </div>
+                        <div class="strength-label" id="strength-label">Password strength</div>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">🔑</span>
+                        <input type="password" id="confirm_password" name="confirm_password"
+                               placeholder="Re-enter your password" required
+                               autocomplete="new-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-register">Create Account →</button>
+            </form>
+
+            <div class="divider">or</div>
+
+            <div class="login-link">
+                Already have an account? <a href="/login">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pwdInput    = document.getElementById('password');
+        const strengthWrap = document.getElementById('strength-wrap');
+        const fill        = document.getElementById('strength-fill');
+        const label       = document.getElementById('strength-label');
+
+        pwdInput.addEventListener('input', () => {
+            const val = pwdInput.value;
+            strengthWrap.style.display = val ? 'block' : 'none';
+
+            let score = 0;
+            if (val.length >= 6)  score++;
+            if (val.length >= 10) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^a-zA-Z0-9]/.test(val)) score++;
+
+            const levels = [
+                { pct: '20%',  color: '#ef4444', text: 'Very Weak' },
+                { pct: '40%',  color: '#f97316', text: 'Weak' },
+                { pct: '60%',  color: '#f59e0b', text: 'Fair' },
+                { pct: '80%',  color: '#10b981', text: 'Strong' },
+                { pct: '100%', color: '#059669', text: 'Very Strong' },
+            ];
+            const lvl = levels[Math.min(score, 4)];
+            fill.style.width      = lvl.pct;
+            fill.style.background = lvl.color;
+            label.textContent     = lvl.text;
+            label.style.color     = lvl.color;
+        });
+    </script>
+</body>
+</html>

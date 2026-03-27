@@ -1,0 +1,27 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+Lib/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VS Code / IDEs
+.vscode/
+
+# Ignore user info inside repo
+users.json
+
+# Temporary files
+~$*
+
+# Large datasets and models
+*.csv
+model/*.pkl
