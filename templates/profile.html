@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 600px; margin: 40px auto; padding: 30px; border-radius: 12px; text-align: center;">
+    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; margin: 0 auto 20px;">
+        {{ user.fullname[0] | upper if user else '?' }}
+    </div>
+    
+    <h2>User Profile</h2>
+    <p style="color: var(--text-muted); margin-bottom: 30px;">Manage your account details and information.</p>
+    
+    <div style="text-align: left; background: rgba(0,0,0,0.05); padding: 20px; border-radius: 8px;">
+        <div style="margin-bottom: 15px;">
+            <span style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Full Name</span>
+            <div style="font-size: 1.1rem; font-weight: 500; margin-top: 5px;">{{ user.fullname if user else 'Unknown' }}</div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <span style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Username</span>
+            <div style="font-size: 1.1rem; font-weight: 500; margin-top: 5px;">@{{ session['username'] }}</div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <span style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Account Type</span>
+            <div style="font-size: 1.1rem; font-weight: 500; margin-top: 5px; color: var(--primary-color);">
+                {% if session['username'] == 'admin' %}Administrator{% else %}Standard User{% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <a href="/logout" class="btn btn-secondary" style="width: 100%; border-color: var(--danger); color: var(--danger);">Sign Out</a>
+    </div>
+</div>
+{% endblock %}

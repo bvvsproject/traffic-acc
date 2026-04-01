@@ -38,7 +38,10 @@
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div class="mobile-auth-btn">
                     {% if session.get('username') %}
-                    <a href="/logout" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(99,102,241,0.35);">Logout</a>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <a href="/profile" style="font-size: 1.1rem; text-decoration: none;" title="View Profile">👤</a>
+                        <a href="/logout" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(99,102,241,0.35);">Logout</a>
+                    </div>
                     {% else %}
                     <a href="/login" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(99,102,241,0.35);">Sign In</a>
                     {% endif %}
@@ -62,9 +65,9 @@
                 </li>
                 {% if session.get('username') %}
                 <li class="desktop-auth-item" style="display:flex; align-items:center; gap:0.75rem;">
-                    <span style="font-size:0.85rem; color: var(--text-muted); font-weight:500;">
+                    <a href="/profile" style="font-size:0.85rem; color: var(--text-muted); font-weight:500; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-muted)'">
                         👤 {{ session['username'] }}
-                    </span>
+                    </a>
                     <a href="/logout" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(99,102,241,0.35);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
                         Logout
                     </a>

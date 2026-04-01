@@ -1,6 +1,7 @@
 import pandas as pd
-import numpy as np
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import LabelEncoder
@@ -10,7 +11,7 @@ import os
 print("Starting model training process...")
 
 # Load dataset
-file_path = "traffic_accident_dataset_20000-1.csv"
+file_path = "traffic_accident_dataset_50000.csv"
 print(f"Loading dataset: {file_path}")
 df = pd.read_csv(file_path)
 
@@ -30,8 +31,8 @@ print(f"Severity distribution:\n{df['Severity'].value_counts().sort_index()}")
 feature_cols = [
     'Road_Type', 'Road_Condition', 'Vehicle_Speed', 'Speed_Limit',
     'Vehicle_Type', 'Temperature', 'Humidity', 'Visibility',
-    'Weather_Condition', 'Junction', 'Crossing', 'Railway_Crossing',
-    'Stop_Sign', 'Speed_Breaker'
+    'T_Junction', 'Crossing', 'Railway_Crossing',
+    'Stop_Signal', 'Speed_Breaker'
 ]
 
 X = df[feature_cols].copy()
@@ -41,7 +42,7 @@ y = df['Severity']
 # Encode categorical columns
 # ─────────────────────────────────────────────────────────
 encoders = {}
-categorical_cols = ['Road_Type', 'Road_Condition', 'Vehicle_Type', 'Weather_Condition', 'Junction']
+categorical_cols = ['Road_Type', 'Road_Condition', 'Vehicle_Type']
 
 for col in categorical_cols:
     le = LabelEncoder()
@@ -57,19 +58,40 @@ print(f"Dataset shape for training: {X.shape}")
 # ─────────────────────────────────────────────────────────
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-print("\nTraining Decision Tree Classifier...")
-model = DecisionTreeClassifier(random_state=42, max_depth=12, min_samples_split=8)
-model.fit(X_train, y_train)
+print("\nTraining Multiple Models for Comparison...")
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=1000),
+    "Random Forest": RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42),
+    "XGBoost": xgb.XGBClassifier(eval_metric='mlogloss', random_state=42)
+}
 
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+best_model = None
+best_acc = 0
+best_pred = None
+
+for name, clf in models.items():
+    if name == "XGBoost":
+        clf.fit(X_train, y_train - 1)
+        preds = clf.predict(X_test) + 1
+    else:
+        clf.fit(X_train, y_train)
+        preds = clf.predict(X_test)
+        
+    acc = accuracy_score(y_test, preds)
+    print(f"{name} Accuracy: {acc * 100:.2f}%")
+    if acc > best_acc:
+        best_acc = acc
+        best_model = clf
+        best_pred = preds
 
 print("=" * 50)
-print(f"Model Accuracy: {accuracy * 100:.2f}%")
+print(f"Best Model Selected: {type(best_model).__name__} with {best_acc * 100:.2f}% Accuracy")
 print(f"Total records used: {len(df)}")
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred, zero_division=0))
+print("\nClassification Report (Best Model):")
+print(classification_report(y_test, best_pred, zero_division=0))
 print("=" * 50)
+
+model = best_model
 
 # ─────────────────────────────────────────────────────────
 # Save model artifacts

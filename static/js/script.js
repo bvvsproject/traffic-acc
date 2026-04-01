@@ -22,70 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Prediction Form Logic
-    const predictForm = document.getElementById('predict-form');
-    if (predictForm) {
-        predictForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('submit-btn');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const loader = submitBtn.querySelector('.loader');
-            const resultBox = document.getElementById('result-box');
-            
-            // Show loading
-            btnText.style.display = 'none';
-            loader.classList.remove('hidden');
-            resultBox.classList.add('hidden');
-            
-            // Gather data
-            const formData = new FormData(predictForm);
-            const data = {};
-            for (let [key, value] of formData.entries()) {
-                const allVals = formData.getAll(key);
-                data[key] = allVals.length > 1 ? allVals : value;
-            }
-            
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    // Update UI
-                    document.getElementById('severity-level').innerText = `Level ${result.severity_level}`;
-                    document.getElementById('severity-label').innerText = result.label;
-                    document.getElementById('severity-desc').innerText = result.explanation;
-                    
-                    // Update badge color based on severity
-                    const badge = document.getElementById('severity-badge');
-                    let color = 'var(--success)';
-                    if (result.severity_level === 2) color = '#3b82f6';
-                    if (result.severity_level === 3) color = 'var(--warning)';
-                    if (result.severity_level === 4) color = 'var(--danger)';
-                    badge.style.borderColor = color;
-                    badge.style.color = color;
-                    
-                    resultBox.classList.remove('hidden');
-                } else {
-                    alert('Error: ' + result.error);
-                }
-            } catch (err) {
-                alert('An error occurred during prediction.');
-                console.error(err);
-            } finally {
-                // Restore button
-                btnText.style.display = 'inline-block';
-                loader.classList.add('hidden');
-            }
-        });
-    }
+    // Prediction Form Logic is handled natively inline within predict.html.
 });
 
 // Chart.js Setup for Dashboard

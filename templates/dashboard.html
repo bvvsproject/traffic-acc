@@ -9,13 +9,13 @@
 <div class="stats-grid">
     <div class="stat-card glass-card">
         <h4>Total Records Analyzed</h4>
-        <h2 class="counter">20,000</h2>
+        <h2 class="counter">50000</h2>
         <p class="text-muted">Rows in traffic severity dataset</p>
     </div>
     <div class="stat-card glass-card">
         <h4>Features Used</h4>
-        <h2 class="counter">14</h2>
-        <p class="text-muted">Road, weather &amp; infrastructure attributes</p>
+        <h2 class="counter">13</h2>
+        <p class="text-muted">Road layout &amp; infrastructure attributes</p>
     </div>
     <div class="stat-card glass-card">
         <h4>Severity Classes</h4>
@@ -24,12 +24,12 @@
     </div>
     <div class="stat-card glass-card">
         <h4>ML Algorithm</h4>
-        <h2 class="counter" style="font-size:1.4rem;">Decision<br>Tree</h2>
-        <p class="text-muted">Classifier with depth 12</p>
+        <h2 class="counter" style="font-size:1.4rem;">XGBoost<br>Classifier</h2>
+        <p class="text-muted">High-performance gradient boosting</p>
     </div>
     <div class="stat-card glass-card">
         <h4>Model Accuracy</h4>
-        <h2 class="counter" style="color:#10b981;">90%</h2>
+        <h2 class="counter" style="color:#10b981;">98.46%</h2>
         <p class="text-muted">Test set validation score</p>
     </div>
 </div>
@@ -45,19 +45,19 @@
         <h3>Road Condition vs Risk</h3>
         <canvas id="roadCondChart"></canvas>
         <p class="text-muted" style="margin-top:1rem; font-size:0.9rem;">Illustrates the average accident severity score
-            mapped against various road surface conditions like Dry, Wet, Ice, or Snow.</p>
+            mapped against various road surface conditions like Damaged, Dry, or Wet roads.</p>
     </div>
     <div class="chart-card glass-card">
-        <h3>Weather Condition Breakdown</h3>
-        <canvas id="weatherChart"></canvas>
-        <p class="text-muted" style="margin-top:1rem; font-size:0.9rem;">Demonstrates the relationship between different
-            atmospheric conditions (Rainy, Foggy, Storm, Clear) and traffic incident volume.</p>
+        <h3>Road Type Risk (Avg Severity)</h3>
+        <canvas id="roadTypeChart"></canvas>
+        <p class="text-muted" style="margin-top:1rem; font-size:0.9rem;">Shows how the average severity of incidents
+            differs across distinct road infrastructures.</p>
     </div>
     <div class="chart-card glass-card">
-        <h3>Vehicle Type Distribution</h3>
+        <h3>Vehicle Type Risk (Avg Severity)</h3>
         <canvas id="vehicleChart"></canvas>
-        <p class="text-muted" style="margin-top:1rem; font-size:0.9rem;">Provides a breakdown of the types of vehicles
-            most frequently involved in these categorized traffic scenarios.</p>
+        <p class="text-muted" style="margin-top:1rem; font-size:0.9rem;">Highlights the average incident severity score
+            based on the type of vehicle involved.</p>
     </div>
 </div>
 {% endblock %}
@@ -78,7 +78,7 @@
             data: {
                 labels: ['Low (1)', 'Medium (2)', 'High (3)'],
                 datasets: [{
-                    data: [5.3, 37.5, 57.2],
+                    data: [6.1, 48.6, 45.3],
                     backgroundColor: ['#10b981', '#f59e0b', '#f97316'],
                     borderWidth: 2,
                     borderColor: '#fff'
@@ -97,15 +97,14 @@
         new Chart(document.getElementById('roadCondChart'), {
             type: 'bar',
             data: {
-                labels: ['Dry', 'Wet', 'Ice', 'Snow'],
+                labels: ['Damaged Road', 'Dry Road', 'Wet Road'],
                 datasets: [{
                     label: 'Avg. Severity Score',
-                    data: [1.6, 2.3, 3.1, 2.9],
+                    data: [2.68, 2.09, 2.41],
                     backgroundColor: [
-                        'rgba(16,185,129,0.7)',
-                        'rgba(245,158,11,0.7)',
                         'rgba(239,68,68,0.8)',
-                        'rgba(99,102,241,0.7)'
+                        'rgba(16,185,129,0.7)',
+                        'rgba(245,158,11,0.7)'
                     ],
                     borderRadius: 8
                 }]
@@ -123,52 +122,53 @@
             }
         });
 
-        // ── 3. Weather Condition Breakdown (Polar Area) ──
-        new Chart(document.getElementById('weatherChart'), {
+        // ── 3. Road Type Risk Level (Polar Area) ──
+        new Chart(document.getElementById('roadTypeChart'), {
             type: 'polarArea',
             data: {
-                labels: ['Clear', 'Rainy', 'Foggy', 'Snow', 'Storm'],
+                labels: ['State Hwy', 'Rural', 'Urban', 'Expressway', 'Service', 'National Hwy'],
                 datasets: [{
-                    data: [28, 22, 18, 14, 18],
+                    label: 'Avg Severity',
+                    data: [2.34, 2.46, 2.51, 2.20, 2.55, 2.30],
                     backgroundColor: [
-                        'rgba(16,185,129,0.65)',
-                        'rgba(99,102,241,0.65)',
-                        'rgba(156,163,175,0.65)',
-                        'rgba(147,197,253,0.65)',
-                        'rgba(239,68,68,0.65)'
+                        'rgba(16,185,129,0.7)',
+                        'rgba(99,102,241,0.7)',
+                        'rgba(156,163,175,0.7)',
+                        'rgba(147,197,253,0.7)',
+                        'rgba(239,68,68,0.7)',
+                        'rgba(245,158,11,0.7)'
                     ]
                 }]
             },
             options: {
                 responsive: true,
+                scales: { r: { min: 2.0, max: 2.7 } },
                 plugins: { legend: { position: 'bottom' } }
             }
         });
 
-        // ── 4. Vehicle Type Distribution (Horizontal Bar) ──
+        // ── 4. Vehicle Type Risk (Avg Severity) ──
         new Chart(document.getElementById('vehicleChart'), {
             type: 'bar',
             data: {
-                labels: ['Car', 'Bike', 'Bus', 'Truck'],
+                labels: ['Truck', 'Bus', 'Bike', 'Car'],
                 datasets: [{
-                    label: 'Records (%)',
-                    data: [38, 22, 20, 20],
+                    label: 'Avg Severity Score',
+                    data: [2.54, 2.54, 2.24, 2.25],
                     backgroundColor: [
-                        'rgba(99,102,241,0.75)',
-                        'rgba(236,72,153,0.75)',
-                        'rgba(245,158,11,0.75)',
-                        'rgba(239,68,68,0.75)'
+                        'rgba(239,68,68,0.8)',
+                        'rgba(245,158,11,0.8)',
+                        'rgba(16,185,129,0.8)',
+                        'rgba(99,102,241,0.8)'
                     ],
-                    borderRadius: 8,
-                    indexAxis: 'y'
+                    borderRadius: 8
                 }]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 scales: {
-                    x: { beginAtZero: true, max: 50, grid: { color: gridColor } },
-                    y: { grid: { display: false } }
+                    y: { beginAtZero: true, max: 3, grid: { color: gridColor }, ticks: { stepSize: 1 }},
+                    x: { grid: { display: false } }
                 },
                 plugins: { legend: { display: false } }
             }

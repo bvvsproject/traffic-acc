@@ -3,8 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 import joblib
 import pandas as pd
 import os
-import json
 from functools import wraps
+from sklearn.cluster import DBSCAN
+import numpy as np
+import requests
+import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = 'trafficai_secret_2026'
@@ -167,51 +170,279 @@ def home():
 def dashboard():
     return render_template('dashboard.html')
 
-@app.route('/predict', methods=['GET', 'POST'])
+@app.route('/predict', methods=['GET'])
 @login_required
 def predict():
     model, features, encoders = load_ml_resources()
-
-    if request.method == 'POST':
-        if not model:
-            return jsonify({'error': 'Model not trained yet. Please run train.py first.'}), 500
-
-        try:
-            data = request.json
-            categorical_cols = ['Road_Type', 'Road_Condition', 'Vehicle_Type',
-                                 'Weather_Condition', 'Junction']
-            input_dict = {}
-            for feat in features:
-                if feat in categorical_cols:
-                    val = str(data.get(feat, ''))
-                    le  = encoders.get(feat)
-                    if le:
-                        if val not in le.classes_:
-                            val = le.classes_[0]
-                        input_dict[feat] = [int(le.transform([val])[0])]
-                    else:
-                        input_dict[feat] = [0]
-                else:
-                    input_dict[feat] = [float(data.get(feat, 0))]
-
-            input_df = pd.DataFrame(input_dict)
-            pred     = int(model.predict(input_df)[0])
-            info     = SEVERITY_MAP.get(pred, {"label": "Unknown", "color": "#999",
-                                               "desc": "Unable to determine severity."})
-            return jsonify({
-                'severity_level': pred,
-                'label':          info['label'],
-                'color':          info['color'],
-                'explanation':    info['desc']
-            })
-        except Exception as e:
-            return jsonify({'error': str(e)}), 400
 
     return render_template('predict.html', features=features, model_loaded=model is not None)
 
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+@app.route('/profile')
+@login_required
+def profile():
+    user = User.query.filter_by(username=session['username']).first()
+    return render_template('profile.html', user=user)
+
+@app.route('/api/hotspots', methods=['GET'])
+def get_hotspots():
+    np.random.seed(42)
+    lats = np.random.uniform(20.0, 21.0, 50) 
+    lons = np.random.uniform(78.0, 79.0, 50)
+    coords = np.column_stack((lats, lons))
+    
+    clustering = DBSCAN(eps=0.05, min_samples=3).fit(coords)
+    hotspots = [{'lat': float(coords[i][0]), 'lng': float(coords[i][1])} 
+                for i, label in enumerate(clustering.labels_) if label != -1]
+    return jsonify(hotspots)
+
+@app.route('/api/location', methods=['GET'])
+def api_location():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    if not lat or not lon:
+        return jsonify({"address": {}, "infra": [], "type": "Unknown"}), 400
+
+    # 1. Nominatim Reverse Geocoding
+    geo_data = {}
+    try:
+        geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=18&addressdetails=1"
+        r_geo = requests.get(geo_url, timeout=5, headers={'User-Agent': 'TrafficAccidentAIv1'})
+        if r_geo.status_code == 200:
+            geo_data = r_geo.json()
+    except Exception as e:
+        print("Geocoding Error:", e)
+
+    # 2. Overpass Infrastructure
+    infra = []
+    is_junction = "No"
+    s_limit = None
+    try:
+        overpass_query = f"""[out:json][timeout:5];(node(around:200,{lat},{lon})["highway"~"crossing|stop"];node(around:200,{lat},{lon})["railway"="level_crossing"];node(around:200,{lat},{lon})["traffic_calming"];node(around:200,{lat},{lon})["junction"];way(around:50,{lat},{lon})["highway"]["maxspeed"];);out body;"""
+        url = "https://overpass-api.de/api/interpreter?data=" + urllib.parse.quote(overpass_query)
+        r_over = requests.get(url, timeout=5)
+        if r_over.status_code == 200:
+            o_data = r_over.json()
+            for el in o_data.get('elements', []):
+                tags = el.get('tags', {})
+                if tags.get('maxspeed'):
+                    try:
+                        parsed_spd = int(''.join(c for c in str(tags.get('maxspeed')) if c.isdigit()))
+                        if parsed_spd > 0: s_limit = parsed_spd
+                    except: pass
+                if tags.get('highway') == 'crossing': infra.append("Crossing")
+                if tags.get('highway') == 'stop': infra.append("Stop")
+                if tags.get('railway') == 'level_crossing': infra.append("Railway")
+                if tags.get('traffic_calming'): infra.append("Speed Bump")
+                if tags.get('junction'):
+                    is_junction = "Crossroad" if tags.get('junction') == 'roundabout' else "T-Junction"
+                    infra.append("Junction")
+    except Exception as e:
+        print("Overpass Infra Error:", e)
+
+    return jsonify({
+        "address": geo_data.get('address', {}),
+        "type": geo_data.get('type', 'unknown'),
+        "infra": list(set(infra)),
+        "junction": is_junction,
+        "speed_limit": s_limit
+    })
+
+@app.route('/api/weather', methods=['GET'])
+def api_weather():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    api_key = '626d1cf5eb7a23ce015f1a2260033dcd'
+    fallback = {"main": "Clear", "temp": 20, "humidity": 60}
+    
+    if not lat or not lon: return jsonify(fallback)
+    
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            w_data = r.json()
+            vis = w_data.get('visibility', 10000) / 100
+            return jsonify({
+                "main": w_data['weather'][0]['main'],
+                "temp": w_data['main']['temp'],
+                "humidity": w_data['main']['humidity'],
+                "visibility": min(max(vis, 10), 100)
+            })
+    except Exception as e:
+        print("Weather API Error:", e)
+        
+    return jsonify(fallback)
+
+def haversine(lat1, lon1, lat2, lon2):
+    import math
+    R = 6371.0 # Earth radius in kilometers
+    dLat = math.radians(lat2 - lat1)
+    dLon = math.radians(lon2 - lon1)
+    a = math.sin(dLat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dLon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+@app.route('/api/hospitals', methods=['GET'])
+def api_hospitals():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    fallback = {"nearest": None, "government": None}
+    if not lat or not lon: return jsonify(fallback)
+
+    try:
+        lat_f = float(lat)
+        lon_f = float(lon)
+        # 50km radius query checking Nodes, Ways, AND Relations (polygons)! Ultra-fast 'out center' limits data transfer.
+        hosp_query = f"""[out:json][timeout:15];nwr(around:50000,{lat_f},{lon_f})["amenity"="hospital"];out center;"""
+        url = "https://overpass-api.de/api/interpreter?data=" + urllib.parse.quote(hosp_query)
+        r = requests.get(url, timeout=15)
+        
+        if r.status_code == 200:
+            h_data = r.json()
+            hospitals = []
+            
+            for el in h_data.get('elements', []):
+                tags = el.get('tags', {})
+                name = tags.get('name', 'General Hospital')
+                
+                # 'out center' gives lat/lon direct for nodes, but inside a 'center' dict for ways/relations
+                h_lat = el.get('lat')
+                h_lon = el.get('lon')
+                if 'center' in el:
+                    h_lat = el['center'].get('lat')
+                    h_lon = el['center'].get('lon')
+                    
+                if not h_lat or not h_lon: continue
+                
+                # Calculate True Distance!
+                dist_km = haversine(lat_f, lon_f, h_lat, h_lon)
+                
+                # Determine Gov/Private
+                h_type = "Private"
+                name_low = name.lower()
+                op_type = tags.get('operator:type', '').lower()
+                op_name = tags.get('operator', '').lower()
+                
+                if op_type in ['public', 'government'] or 'gov' in name_low or 'public' in name_low or 'general' in name_low or 'civil' in name_low or 'district' in name_low or 'government' in op_name:
+                    h_type = "Government"
+                
+                hospitals.append({
+                    "name": name,
+                    "type": h_type,
+                    "lat": h_lat,
+                    "lon": h_lon,
+                    "distance": round(dist_km, 1)
+                })
+            
+            if not hospitals:
+                return jsonify(fallback)
+            
+            # Sort by distance
+            hospitals.sort(key=lambda x: x['distance'])
+            
+            nearest_hosp = hospitals[0]
+            nearest_gov = next((h for h in hospitals if h['type'] == 'Government'), None)
+            
+            return jsonify({
+                "nearest": nearest_hosp,
+                "government": nearest_gov
+            })
+            
+    except Exception as e:
+        print("Hospital API Error:", e)
+
+    return jsonify(fallback)
+
+@app.route('/realtime_predict', methods=['POST'])
+@login_required
+def realtime_predict():
+    model, features, encoders = load_ml_resources()
+    if not model: return jsonify({'error': 'Model not trained.'}), 500
+
+    data = request.json
+    
+    speed = float(data.get('Vehicle_Speed', 0))
+    limit = float(data.get('Speed_Limit', 60))
+    weather = data.get('Weather_Condition', 'Clear')
+    road_cond = data.get('Road_Condition', 'Dry')
+    
+    speed_ratio = speed / limit if limit > 0 else 1.0
+    base_risk = min(speed_ratio * 40, 60)
+    weather_risk = 25 if weather in ['Rainy', 'Snow', 'Storm', 'Foggy'] else 0
+    road_risk = 15 if road_cond in ['Wet', 'Ice', 'Snow', 'Damaged'] else 0
+    
+    driver_score = min(int(base_risk + weather_risk + road_risk + 5), 100)
+    
+    input_dict = {}
+    categorical_cols = ['Road_Type', 'Road_Condition', 'Vehicle_Type']
+    for feat in features:
+        if feat in categorical_cols:
+            val = str(data.get(feat, ''))
+            le = encoders.get(feat)
+            if le:
+                val = val if val in le.classes_ else le.classes_[0]
+                input_dict[feat] = [int(le.transform([val])[0])]
+            else:
+                input_dict[feat] = [0]
+        else:
+            input_dict[feat] = [float(data.get(feat, 0))]
+            
+    input_df = pd.DataFrame(input_dict)
+    
+    is_xgb = "XGB" in str(type(model))
+    try:
+        pred_val = int(model.predict(input_df)[0])
+        pred = pred_val + 1 if is_xgb else pred_val
+        info = SEVERITY_MAP.get(pred, {"label": "Unknown", "color": "#999", "desc": "N/A"})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+    emergency_map = {
+        1: "Self Care / First Aid Kit Sufficient",
+        2: "General Hospital Checkup Recommended",
+        3: "Requires Immediate Ambulance Dispatch",
+        4: "Critical: Dispatch Ambulance, ICU Preparation & Police Assistance"
+    }
+    
+    # Dual Language AI Explanations (English + Hindi)
+    exps_en = []
+    exps_hi = []
+    
+    if speed > limit + 10: 
+        exps_en.append("High vehicle speed over the limit sharply increased the risk.")
+        exps_hi.append("तेज गति के कारण जोखिम काफी बढ़ गया है।")
+        
+    if weather in ['Rainy', 'Snow', 'Storm', 'Foggy']: 
+        exps_en.append(f"Adverse weather ({weather}) severely reduced traction and safety.")
+        exps_hi.append(f"खराब मौसम ({weather}) ने कर्षण और सुरक्षा को गंभीर रूप से कम कर दिया है।")
+        
+    if data.get('Road_Type') == 'Highway' and speed > 80: 
+        exps_en.append("High speed combined with a highway environment contributed to severity.")
+        exps_hi.append("राजमार्ग के वातावरण के साथ उच्च गति ने गंभीरता में योगदान दिया।")
+        
+    if data.get('Road_Condition') in ['Wet', 'Ice', 'Snow', 'Damaged']:
+        exps_en.append(f"Dangerous road surface ({data.get('Road_Condition')}) destabilized the vehicle.")
+        exps_hi.append("खतरनाक सड़क की सतह ने वाहन को अस्थिर कर दिया।")
+
+    if not exps_en: 
+        exps_en.append("Routine conditions detected; baseline risk model applied.")
+        exps_hi.append("सामान्य स्थितियों का पता चला; आधार रेखा लागू की गई।")
+
+    final_explanation = " ".join(exps_en) + " | हिंदी: " + " ".join(exps_hi)
+
+    return jsonify({
+        'severity_level': pred,
+        'label': info.get('label', 'Unknown'),
+        'color': info.get('color', '#999'),
+        'explanation': info.get('desc', 'N/A'),
+        'driver_score': driver_score,
+        'emergency_response': emergency_map.get(pred, "Standard Response"),
+        'ai_explanation': final_explanation
+    })
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', debug=True, port=5000)
