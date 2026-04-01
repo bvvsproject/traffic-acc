@@ -6,3 +6,5 @@ joblib
 gunicorn
 Flask-SQLAlchemy
 psycopg2-binary
+requests
+xgboost
